@@ -11,9 +11,11 @@ st.write('OpenAI APIキー、GitHubリポジトリURL、および解析するフ
 
 api_key = st.text_input('OpenAI APIキー', type='password')
 repo_url = st.text_input('GitHubリポジトリURL')
-branch = st.text_input('ブランチ名（デフォルトはmaster）', 'master')
+branch = st.text_input('ブランチ名（デフォルトはmain）', 'main')
+llm_models = ['gpt-3.5-turbo','gpt-4o']
+llm = st.selectbox('回答出力モデル', llm_models)
 
-file_ext_options = ['すべてのファイル', '.py', '.js', '.java', '.md', '.txt', 'その他']
+file_ext_options = ['すべてのファイル', '.py', '.js', '.md', '.txt', 'その他']
 file_ext_selection = st.selectbox('ファイル拡張子', file_ext_options)
 
 if file_ext_selection == 'その他':
@@ -52,7 +54,7 @@ if st.button('回答の出力'):
                 vectorstore_cls=Chroma,
                 embedding=OpenAIEmbeddings(disallowed_special=()),
             ).from_loaders([loader])
-            llm = OpenAI(temperature=0) 
+            llm = OpenAI(model=llm,temperature=0) 
 
             answer = index.query(query, llm=llm)
 
