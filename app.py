@@ -3,6 +3,8 @@ import streamlit as st
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings, OpenAI
 from langchain_community.document_loaders import GitLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.chains import RetrievalQA
 from langchain.indexes import VectorstoreIndexCreator
 
 # Streamlit UI
@@ -54,12 +56,26 @@ if st.button('回答の出力'):
                 vectorstore_cls=Chroma,
                 embedding=OpenAIEmbeddings(disallowed_special=()),
             ).from_loaders([loader])
-            llm = OpenAI(model=llm,temperature=0) 
+            # llm = OpenAI(model=llm,temperature=0)
+            documents = loader.load()
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+            docs = text_splitter.split_documents(documents)
 
-            answer = index.query(query, llm=llm)
+            
+            embeddings = OpenAIEmbeddings()
+            vectorstore = Chroma.from_documents(docs, embeddings)
+
+            retriever = vectorstore.as_retriever()
+
+            llm = OpenAI(model=llm)
+            qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
+
+            result = qa_chain.run(query)
+
+            # answer = index.query(query, llm=llm)
 
             st.write('### 回答:')
-            st.write(answer)
+            st.write(result)
 
         except Exception as e:
             st.error(f'エラー: {str(e)}')
